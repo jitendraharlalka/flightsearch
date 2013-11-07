@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="intro">Press the button to speak!</string>
+    <string name="app_name">Flight Search</string>
+    <string name="action_settings">Settings</string>
+    <string name="hello_world">Hello world!</string>
+	<string name="speech">Please Speak!</string>
+	<string name="word_intro">Suggested Words</string>
+</resources>
