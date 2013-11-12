@@ -1,14 +1,34 @@
 package com.example.flightsearch;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale; 
+
+import org.apache.http.HttpResponse;
+import org.apache.http.NameValuePair;
+import org.apache.http.client.ClientProtocolException;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.message.BasicNameValuePair;
+import org.apache.http.protocol.BasicHttpContext;
+import org.apache.http.protocol.HttpContext;
 
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.speech.RecognizerIntent;
 import android.speech.tts.TextToSpeech.OnInitListener;
@@ -16,6 +36,8 @@ import android.speech.tts.TextToSpeech;
 import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
+import android.widget.AbsListView;
+import android.widget.AbsListView.OnScrollListener;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.ArrayAdapter;
@@ -33,10 +55,10 @@ import android.location.LocationManager;
  * - presents user with list of suggested words
  * - when user selects a word from the list, the app speaks the word back using the TTS engine 
  */
-public class MainActivity extends Activity implements OnClickListener, OnInitListener {
+public class MainActivity extends Activity implements OnClickListener, OnInitListener{
 	
 	//variable for checking Voice Recognition support on user device
-	private static final int VR_REQUEST = 999;
+	private static final int VR_REQUEST = 1234;
 	
 	//variable for checking TTS engine data on user device
     private int MY_DATA_CHECK_CODE = 0;
@@ -53,8 +75,10 @@ public class MainActivity extends Activity implements OnClickListener, OnInitLis
 	boolean [] flagVar = new boolean[10];
 	
 	String destination;
+	String destination1;
 	String origin;
 	String time;
+	ArrayList <String> matches;
     /** Create the Activity, prepare to process speech and repeat */
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -168,6 +192,7 @@ public class MainActivity extends Activity implements OnClickListener, OnInitLis
             		//output Toast message
             		Toast.makeText(MainActivity.this, "You want to fly from "+origin+" to "+destination, Toast.LENGTH_SHORT).show();//**alter for your Activity name***
             		flagVar[2] = true;
+            		flagVar[3]=true;
             		origin = "Raleigh";
             	}
             	
@@ -183,8 +208,30 @@ public class MainActivity extends Activity implements OnClickListener, OnInitLis
             	
             	if(flagVar[0]==false){
             		//speak the word using the TTS
+            		
+            		String url = "http://54.201.35.119:8000/rawParser/departDate/morning of 27th november";
+            		
+//            		try{
+//        			  URL url1 = new URL("http://54.201.35.119:8000/rawParser/origin/raleigh");
+//        			  BufferedReader in = new BufferedReader(new InputStreamReader(url1.openStream()));
+//        			  String tempStr;
+//        			  while((tempStr = in.readLine())!=null){
+//        	    	    	Toast.makeText(MainActivity.this, tempStr, Toast.LENGTH_LONG).show();
+//          	    			repeatTTS.speak(tempStr, TextToSpeech.QUEUE_FLUSH, null);
+//        			  }
+//        			  in.close();
+//        			  HttpURLConnection con = (HttpURLConnection)url1.openConnection();
+//        			  //InputStream in = new BufferedInputStream(con.getInputStream());
+//        			  //readStream(in);
+//        			  //readStream(con.getInputStream());
+//            		} catch (Exception e) {
+//            			Toast.makeText(MainActivity.this, e.toString(), Toast.LENGTH_LONG).show();
+//        			}
+            		//new eventupdate().execute();
+
             		String output = ":"+":"+":You want to fly to "+wordChosen+":Is that correct? Please say yes or no:";
             		destination = wordChosen;
+            		
             		repeatTTS.speak(output, TextToSpeech.QUEUE_FLUSH, null);
             		//output Toast message
             		Toast.makeText(MainActivity.this, "You want to fly to  "+wordChosen, Toast.LENGTH_SHORT).show();//**alter for your Activity name***
@@ -199,67 +246,205 @@ public class MainActivity extends Activity implements OnClickListener, OnInitLis
         
         /* Location Manager */
         
-     // Acquire a reference to the system Location Manager
-        LocationManager locationManager = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
-
-        // Define a listener that responds to location updates
-        LocationListener locationListener = new LocationListener() {
-            public void onLocationChanged(Location location) {
-              // Called when a new location is found by the network location provider.
-              makeUseOfNewLocation(location);
-            }
-
-            public void onStatusChanged(String provider, int status, Bundle extras) {}
-
-            public void onProviderEnabled(String provider) {}
-
-            public void onProviderDisabled(String provider) {}
-          
-        };
-        
-          String locationProvider = LocationManager.NETWORK_PROVIDER;
-          
-          locationManager.requestLocationUpdates(locationProvider, 10000, 500, locationListener);
-          
-          Location lastKnownLocation = locationManager.getLastKnownLocation(locationProvider);
+//     // Acquire a reference to the system Location Manager
+//        LocationManager locationManager = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
+//
+//        // Define a listener that responds to location updates
+//        LocationListener locationListener = new LocationListener() {
+//            public void onLocationChanged(Location location) {
+//              // Called when a new location is found by the network location provider.
+//              makeUseOfNewLocation(location);
+//            }
+//
+//            public void onStatusChanged(String provider, int status, Bundle extras) {}
+//
+//            public void onProviderEnabled(String provider) {}
+//
+//            public void onProviderDisabled(String provider) {}
+//          
+//        };
+//        
+//          String locationProvider = LocationManager.NETWORK_PROVIDER;
+//          
+//          locationManager.requestLocationUpdates(locationProvider, 10000, 500, locationListener);
+//          
+//          Location lastKnownLocation = locationManager.getLastKnownLocation(locationProvider);
           
           //Toast.makeText(MainActivity.this, lastKnownLocation.toString(), Toast.LENGTH_LONG).show();
-        
+
+    }
     
-  		
     
+    private void readStream(InputStream in) {
+    	  BufferedReader reader = null;
+    	  try {
+    	    reader = new BufferedReader(new InputStreamReader(in));
+    	    String line = "";
+    	    while ((line = reader.readLine()) != null) {
+    	    	Toast.makeText(MainActivity.this, line, Toast.LENGTH_LONG).show();
+    	    	repeatTTS.speak(line, TextToSpeech.QUEUE_FLUSH, null);
+    	    }
+    	  } catch (IOException e) {
+    	    e.printStackTrace();
+    	  } finally {
+    	    if (reader != null) {
+    	      try {
+    	        reader.close();
+    	      } catch (IOException e) {
+    	        e.printStackTrace();
+    	        }
+    	    }
+    	  }
+    	}
+    
+    
+    public class eventupdate extends AsyncTask<Void, Void, String> {
+
+    	@Override
+        protected String doInBackground(Void... url) {
+
+    		String HTML="";
+    		
+            try {
+
+              URL url1 = new URL("http://54.201.35.119:8000/rawParser/destination/india");
+              Toast.makeText(MainActivity.this,"something", Toast.LENGTH_LONG).show();
+  			  BufferedReader in = new BufferedReader(new InputStreamReader(url1.openStream()));
+  			  String tempStr="";
+  			  while((tempStr += in.readLine())!=null){
+  	    	    	Toast.makeText(MainActivity.this, tempStr+"", Toast.LENGTH_LONG).show();
+  			  }
+  			  in.close();
+                
+                
+            } catch (ClientProtocolException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            } catch (IOException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
+            // TODO Auto-generated method stub
+            
+            return HTML;
+        }
+      
+    	protected void onPostExecute(String tempStr) {   
+    		destination1=tempStr;
+    		super.onPostExecute(tempStr);
+               
+       }
+   }
+    
+    
+    int initialDialogueCount=0;
+
+    private void dialogueControl(){
+    	
+    	
+    		if(initialDialogueCount<=1 && flagVar[0]==false){
+    			initialDialogue();
+    			if(initialDialogueCount>0){
+    				boolean speakingEnd = repeatTTS.isSpeaking();
+        			do{
+        			   speakingEnd = repeatTTS.isSpeaking();
+        			} while (speakingEnd);	
+        			Toast.makeText(MainActivity.this, "Destination", Toast.LENGTH_SHORT).show();
+        			listenToSpeech();    
+        			
+    			}
+    			
+    			Toast.makeText(MainActivity.this, "Something wrong here Destination", Toast.LENGTH_SHORT).show();
+
+    			
+    			initialDialogueCount++;
+    			if(initialDialogueCount>=2)
+    				flagVar[0]=true;
+    		}
+    		if(flagVar[0]==true){
+
+    			
+    			destination = "Washington";
+    			
+    			try {
+					Thread.sleep(6000);
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+    			
+	
+    			
+    			String ttsText = "You want to fly to "+destination+" . Is that correct? Please say Yes or No?";
+    			Toast.makeText(MainActivity.this, destination, Toast.LENGTH_SHORT).show();
+    			if (ttsText!=null) {
+    	            if (!repeatTTS.isSpeaking()) {
+    	                repeatTTS.speak(ttsText, TextToSpeech.QUEUE_FLUSH, null);
+    	            }
+    	        }
+    			
+    			boolean speakingEnd = repeatTTS.isSpeaking();
+    			do{
+    			   speakingEnd = repeatTTS.isSpeaking();
+    			} while (speakingEnd);	
+    			
+    			flagVar[1]=true;
+    			
+    			Toast.makeText(MainActivity.this, "Destination Taken", Toast.LENGTH_SHORT).show();
+    			
+    			listenToSpeech();    	
+    			
+    			String answerDestination="yes";
+
+    			Toast.makeText(MainActivity.this, "Something wrong here Destination", Toast.LENGTH_SHORT).show();
+    			
+    		}
     }
     
     protected void makeUseOfNewLocation(Location location) {
-		// TODO Auto-generated method stub
-		
+		// TODO Auto-generated method stub	
 	}
+    
+    private void initialDialogue(){
+		String text = "Hello, Welcome to Flight Search Dialogue System! Where do you want to fly tooo?";
+		repeatTTS.speak(text, TextToSpeech.QUEUE_FLUSH, null);
+		if (text!=null) {
+            if (!repeatTTS.isSpeaking()) {
+                repeatTTS.speak(text, TextToSpeech.QUEUE_FLUSH, null);
+            }
+        }
+    }
 
 	/**
      * Called when the user presses the speak button
      */
+    
+    int tempVar =0;
     public void onClick(View v) {
-    	if (v.getId() == R.id.speechButton) {
-    		repeatTTS.speak("", TextToSpeech.QUEUE_FLUSH, null);
-    		repeatTTS.speak("Welcome to Flight Search:", TextToSpeech.QUEUE_FLUSH, null);
-    		repeatTTS.speak(":", TextToSpeech.QUEUE_FLUSH, null);
-    		repeatTTS.speak(":", TextToSpeech.QUEUE_FLUSH, null);
-    		repeatTTS.speak("Where do you want to fly to?", TextToSpeech.QUEUE_FLUSH, null);
-    		repeatTTS.speak(":", TextToSpeech.QUEUE_FLUSH, null);
-    		repeatTTS.speak(":", TextToSpeech.QUEUE_FLUSH, null);
-    		//listen for results
-	    	boolean speakingEnd = repeatTTS.isSpeaking();
-			do{
-			   speakingEnd = repeatTTS.isSpeaking();
-			} while (speakingEnd);	
-    		listenToSpeech();
-        }
+    	if(tempVar<2){
+    		initialDialogue();
+    		tempVar++;
+    		if(tempVar==2)
+    			listenToSpeech();
+    	}
+    	else{
+    		if(v.getId() == R.id.speechButton) {
+    		//dialogueControl();
+    			listenToSpeech();
+    	
+    		}
+    	}
     }
     
     /**
      * Instruct the app to listen for user speech input
      */
     private void listenToSpeech() {
+    	
+    	boolean speakingEnd = repeatTTS.isSpeaking();
+		do{
+		   speakingEnd = repeatTTS.isSpeaking();
+		} while (speakingEnd);	
     	
     	//start the speech recognition intent passing required data
     	Intent listenIntent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
@@ -270,10 +455,14 @@ public class MainActivity extends Activity implements OnClickListener, OnInitLis
     	//set speech model
     	listenIntent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
     	//specify number of results to retrieve
-    	listenIntent.putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 10);
+    	listenIntent.putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 5);
+
+    	Toast.makeText(MainActivity.this, "SpeakDestination", Toast.LENGTH_SHORT).show();
 
     	//start listening
         startActivityForResult(listenIntent, VR_REQUEST);
+        
+      
     }
     
     /**
@@ -287,9 +476,10 @@ public class MainActivity extends Activity implements OnClickListener, OnInitLis
         if (requestCode == VR_REQUEST && resultCode == RESULT_OK) 
         {
         	//store the returned word list as an ArrayList
-            ArrayList<String> suggestedWords = data.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS);
+            matches = data.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS);
             //set the retrieved list to display in the ListView using an ArrayAdapter
-            wordList.setAdapter(new ArrayAdapter<String> (this, R.layout.words, suggestedWords));
+            wordList.setAdapter(new ArrayAdapter<String> (this, android.R.layout.simple_list_item_1, matches));
+
         }
         
         //returned from TTS data check
@@ -321,4 +511,5 @@ public class MainActivity extends Activity implements OnClickListener, OnInitLis
     	  repeatTTS.setLanguage(Locale.US);//***choose your own locale here***
     	   
     }
+
 }
