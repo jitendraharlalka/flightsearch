@@ -6,6 +6,7 @@ import parsedatetime as pdt
 from parsedatetime import Constants
 from pytz import timezone
 from rawParser.models import Airports
+import utils
 
 # Create your views here.
 TZ = timezone(getattr(settings, "TIME_ZONE", "UTC"))
@@ -13,7 +14,10 @@ broadTimes=['morning','noon','evening','night','midnight']
 meridian=[' a.m.',' p.m.',' am',' pm']
 
 def index(request):
-	return HttpResponse('Hello, world. I will send back what you send me.')
+	return HttpResponse('Hello, world. This is s a static text.')
+
+def tagger(request,text):
+	return HttpResponse(utils.nerTag(text))	
 
 def origin(request, incity):
 	outcity=disambiguateCity(incity)
@@ -88,4 +92,4 @@ def disambiguateCity(incity):
 
 
 def parse(s):
-	return TZ.localize(datetime(*tuple(pdt.Calendar(Constants()).parse(s)[0])[:7])) 
+	return TZ.localize(datetime(*tuple(pdt.Calendar(Constants()).parse(s)[0])[:7]))

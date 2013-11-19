@@ -7,6 +7,7 @@ urlpatterns = patterns('',
     url(r'^origin/(?P<incity>.+)/$',views.origin, name='origin'),
     url(r'^destination/(?P<incity>.+)/$',views.destination, name='destination'),
     url(r'^departDate/(?P<dateTime>.+)/$',views.departureDate, name='departDate'),
+    url(r'^tag/(?P<text>.+)/$',views.tagger,name='tagger'),
     #url(r'^departTime/(?P<time>.+)/$',views.departureTime, name='departTime'),
 )
 

@@ -60,8 +60,8 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'flightsearch',
-	'USER': 'root',			# Change to your database username
-	'PASSWORD': '',			# Change the database password
+	'USER': 'jitendra',
+	'PASSWORD': 'anant',
 	'HOST': '/var/run/mysqld/mysqld.sock',
 	'PORT': '3306',
     }
