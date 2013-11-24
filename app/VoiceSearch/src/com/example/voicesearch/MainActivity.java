@@ -44,7 +44,7 @@ public class MainActivity extends Activity implements OnClickListener, OnInitLis
 	        Button speakButton = (Button) findViewById(R.id.speakButton);
 	 
 	        wordsList = (ListView) findViewById(R.id.list);
-	 
+	                
 	        // Disable button if no recognition service is present
 	        PackageManager pm = getPackageManager();
 	        List<ResolveInfo> activities = pm.queryIntentActivities(
@@ -60,21 +60,38 @@ public class MainActivity extends Activity implements OnClickListener, OnInitLis
 	     * Handle the action of the button being clicked
 	     */
 	    public void speakButtonClicked(View v)
-	    {
-	        //tts.stop();
-	        //tts.shutdown();
-			if(flagVar[0] == false){
-				String test="";
-				test+=":";
-				test+="Welcome to Flight Search!!";
-				test+=":";
-				test+="Where do you want to fly to?";
-				if(test!=null){
-					tts.speak(test, TextToSpeech.QUEUE_FLUSH,null);				
-				}
+	    {      
+			
+	        //initial dialogue
+	        
+	    	Toast.makeText(this,"WORKS",Toast.LENGTH_SHORT).show();
+	    	
+	    	String test="";
+			test+="Welcome to Flight Search!!";
+			test+="Where do you want to fly to?";
+			test = test.toString();
+			if(test!=null){
+				tts.speak(test, TextToSpeech.QUEUE_FLUSH,null);				
 			}
-			flagVar[0]=true;	      
-			startVoiceRecognitionActivity();
+//			
+//			Toast.makeText(this,"WORKS2",Toast.LENGTH_SHORT).show();
+//	    	
+//	    	boolean speakingEnd = tts.isSpeaking();
+//			do{
+//			   speakingEnd = tts.isSpeaking();
+//			} while (speakingEnd);	
+//	    	
+//			Toast.makeText(this,"WORK3",Toast.LENGTH_SHORT).show();
+//			
+//	    	String openingDialogue = "Where do you want to fly to ?"+":";
+//	    	openingDialogue = openingDialogue.toString();
+//	    	if(openingDialogue!=null){
+//	    		tts.speak(openingDialogue.toString(),TextToSpeech.QUEUE_FLUSH,null);
+//	    		Toast.makeText(this,"Ask Destination",Toast.LENGTH_SHORT).show();
+//	    	}
+	    
+	    	DialogueControl();	
+	    
 	    }
 	 
 	    /**
@@ -83,7 +100,6 @@ public class MainActivity extends Activity implements OnClickListener, OnInitLis
 	    private void startVoiceRecognitionActivity()
 	    {
 	    	boolean speakingEnd = tts.isSpeaking();
-	    	
 			do{
 			   speakingEnd = tts.isSpeaking();
 			} while (speakingEnd);	
@@ -92,7 +108,24 @@ public class MainActivity extends Activity implements OnClickListener, OnInitLis
 	        intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
 	        intent.putExtra(RecognizerIntent.EXTRA_PROMPT, "Flight Search");
 	        startActivityForResult(intent, REQUEST_CODE);
+			
+	        /*try{
+				Thread.sleep(1000);
+			}catch(InterruptedException e){
+				Toast.makeText(this,"Failed to go to sleep after recognizer",Toast.LENGTH_SHORT).show();
+			}*/
+	        
 	    }
+	    
+	    private void DialogueControl(){
+	    	
+	    	startVoiceRecognitionActivity();
+	    	String test = matches.toString();
+	    	Toast.makeText(this,test,Toast.LENGTH_SHORT).show();
+	    	
+	    }
+	    
+	    
 	 
 	    /**
 	     * Handle the results from the voice recognition activity.
@@ -123,57 +156,7 @@ public class MainActivity extends Activity implements OnClickListener, OnInitLis
 
 		@Override
 		public void onClick(View v) {
-			if(tts!=null){
-				if(flagVar[0]==true && flagVar[1]==false){
-					String test = "";
-						test+=":";
-						test+="You want to fly to ";
-						test += matches.get(0).toString();
-						test+=":";
-						test+=":";
-						test+=":";
-						test+="Is that correct?";
-						test+=":";
-						test+=":";
-						test+="Please say yes or no";
-					if(test!=null){
-						if(!tts.isSpeaking()){
-							tts.speak(test, TextToSpeech.QUEUE_FLUSH,null);
-						}							
-					}
-				}
-				flagVar[1]=true;
-				
-				boolean speakingEnd = tts.isSpeaking();
-				do{
-				   speakingEnd = tts.isSpeaking();
-				} while (speakingEnd);	
-				
-				startVoiceRecognitionActivity();
-				
-				try{
-					Thread.sleep(6000);
-				}catch(InterruptedException e){
-					System.out.println("Error");
-				}
-				
-				if(flagVar[0]==true && flagVar[1]==true && flagVar[2]==false && matches.get(0).toString()=="yes"){
-					String test = "";
-					//for(int i=0;i<matches.size();i++){
-						test+=":";
-						test+="Where do you want to fly from ";
-						test+=":";
-						test+=":";					//}
-	//				tts.speak(test, TextToSpeech.QUEUE_FLUSH, null);
-					//String text = matches.get(0);
-					if(test!=null){
-						if(!tts.isSpeaking()){
-							tts.speak(test, TextToSpeech.QUEUE_FLUSH,null);
-						}							
-					}
-				}
-				flagVar[2]=true;
-			}
+			
 		}
 		
 		protected void onDestroy(){
