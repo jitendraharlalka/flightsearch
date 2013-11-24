@@ -1,2 +1,2 @@
 eclipse.preferences.version=1
-task-tag-projects-already-scanned=VoiceSearch
+task-tag-projects-already-scanned=VoiceSearch,FlightSearch,Client,httpconnection,dbtest,hackdukevoicetest,voicetest
