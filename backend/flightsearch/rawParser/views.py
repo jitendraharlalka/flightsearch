@@ -5,9 +5,9 @@ from django.http import HttpResponse
 import parsedatetime as pdt
 from parsedatetime import Constants
 from pytz import timezone
-from rawParser.models import Airports
+from rawParser.models import Airports,Flights
 import utils,logging,json,ast
-
+from django.core import serializers
 
 # Create your views here.
 TZ = timezone(getattr(settings, "TIME_ZONE", "UTC"))
@@ -21,15 +21,57 @@ def index(request):
 
 def tagger(request,text):
 	tags=utils.nerTag(text)
-	#return HttpResponse(tags)
-	logger.debug('Called ner tagger')
 	tags=ast.literal_eval(tags)
-	logger.debug(tags)
 	tags=uniteCityTokens(tags)
 	tags=processDateTokens(tags)
 	tags=processTimeTokens(tags)
-	logger.debug(tags)
-	return HttpResponse(str(tags))
+	res=search(tags)
+	return HttpResponse(str(res))
+	#return HttpResponse(str(tags))
+
+
+def search(request,fields):
+	flights=Flights.objects.filter()
+	fields=dict(fields)
+	for key in fields:
+		logger.debug(key)
+		fl=[]
+		for val in fields[key]:
+			if key=='TIME':
+				splitVals=val.split('-')
+				if len(splitVals)==2:
+					logger.debug(splitVals)
+					tmp=Flights.objects.filter(starttime__gt=splitVals[0],starttime__lt=splitVals[1])
+					logger.debug('For the evening number of flights = '+str(len(tmp)))
+					fl=list(set(fl) | set(tmp))		
+				else:
+					statedTime=datetime.strptime(val,'%H:%M')
+					lwLimit=statedTime-timedelta(hours=1)
+					upLimit=statedTime+timedelta(hours=1)
+					lower=lwLimit.strftime('%H:%M')
+					upper=upLimit.strftime('%H:%M')
+					tmp=Flights.objects.filter(starttime__gt=lower,starttime__lt=upper)
+					fl=list(set(fl) | set(tmp))
+					logger.debug('Returning for time: '+str(len(fl)))
+			elif key=='DATE':
+				originalForm=datetime.strptime(val,'%A, %d %B %Y')
+				dbForm=originalForm.strftime('%Y-%m-%d')
+				tmp=Flights.objects.filter(departdate=dbForm)
+				fl=list(set(fl) | set(tmp))
+				logger.debug('Returning for date: '+str(len(fl)))
+			elif key=='ORIGIN':
+				tmp=Flights.objects.filter(origin__iexact=val)
+				fl=list(set(fl) | set(tmp))
+				logger.debug('Returning for origin: '+str(len(fl)))
+			elif key=='DESTINATION':
+				tmp=Flights.objects.filter(destination__iexact=val)
+				fl=list(set(fl) | set(tmp))
+				logger.debug('Returning for destination: '+str(len(fl)))
+		flights=list(set(flights) & set(fl))
+		logger.debug('Total returned flights = ' + str(len(flights)))
+	flights=sorted(flights,key=lambda x:x.cost)
+	json_result=serializers.serialize('json',flights)
+	return HttpResponse(str(json_result))
 
 def origin(request, incity):
 	outcity=disambiguateCity(incity)
@@ -105,60 +147,37 @@ def disambiguateCity(incity):
 
 def disambiguateCityTokens(values,component=""):
 	airports=Airports.objects.filter()
-	logger.debug('Inside disambiguateCityTokens')
 	#component=""
 	for token in values:
-		logger.debug('Token')
-		logger.debug(token)
 		if component=="" or component=="code":
 			apTokens=Airports.objects.filter(code__iexact=token)
 			if len(apTokens)>0:
 				component="code"
-				logger.debug(token+' '+str(apTokens))
 				airports=list(set(airports) & set(apTokens))
 			else:
-                        	#if component=="code":
-					#logger.debug('Code continue')
 				airports=disambiguateCityTokens(values,"codeExamined")
-					#break
-				#else:
-					#logger.debug('Finish Code')
-					#component="codeFinished"
 		elif component=="codeExamined" or component=="city":
-			logger.debug('Inside City center')
 			apTokens=Airports.objects.filter(city__icontains=token)
 			if len(apTokens)>0:
 				component="city"
 				airports=list(set(airports) & set(apTokens))
 			else:
-				#if component=="city":
 				airports=disambiguateCityTokens(values,"cityExamined")
-					#break
-				#else:
-					#component="cityFinished"
 		elif component=="cityExamined" or component=="airport":
-			logger.debug('Inside Airport center')
 			apTokens=Airports.objects.filter(airport__icontains=token)
 			if len(apTokens)>0:
 				component="airport"
 				airports=list(set(airports) & set(apTokens))
 			else:
-				#if component=="airport":
 				airports=disambiguateCityTokens(values,"airportExamined")
-					#break
-				#else:
-					#component="airportFinished"
 		elif component=="airportExamined":
 			airports="-1"
 	
-	logger.debug('Returning '+str(len(airports))+' airportCount')
 	return airports
 
 def uniteCityTokens(tags):
 	fieldKeys=['ORIGIN','DESTINATION']
-	logger.debug('Uniting City tokens')
 	for key in tags:
-		logger.debug(key+' processin')
 		if key in fieldKeys:
 			logger.debug(tags[key])
 			airports=disambiguateCityTokens(tags[key])
@@ -167,23 +186,18 @@ def uniteCityTokens(tags):
 			else:
 				tags[key]=[]			
 				for ap in airports:
-					tags[key].append(ap.code)
+					tags[key].append(ap.code.encode('ascii','ignore'))
 		if key=='LOCATION':
-			logger.debug(tags[key])
 			apcodes=[]
 			for i,unit in enumerate(tags[key]):
-				logger.debug('unit')
 				logger.debug(unit)
 				airports=disambiguateCityTokens(unit)
 				if airports=="-1":
 					apcodes.append("-1")
 				else:
-					#tags[key][i]=[]
 					for ap in airports:
-						apcodes.append(ap.code)
-						#tags[key][i].append(ap.code)
+						apcodes.append(ap.code.encode('ascii','ignore'))
 			tags[key]=apcodes 
-	logger.debug(tags)
 	return tags
 
 
@@ -207,5 +221,6 @@ def processTimeTokens(tags):
 				normTime=utils.processTime(raw)
 				tags[key][i]=normTime
 	return tags
+
 def parse(s):
 	return TZ.localize(datetime(*tuple(pdt.Calendar(Constants()).parse(s)[0])[:7]))

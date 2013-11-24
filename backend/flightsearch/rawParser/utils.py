@@ -21,6 +21,7 @@ def nerTag(text):
         pos=nltk.pos_tag(txt)
         nerTags=st.tag(txt)
 	logger.debug(pos)
+	logger.debug(nerTags)
         #return (nerTags)
 	out={}
 	
