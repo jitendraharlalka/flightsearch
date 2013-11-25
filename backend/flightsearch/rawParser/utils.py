@@ -49,18 +49,18 @@ def nerTag(text):
 		previous=tag[1]
 		iter+=1
 	
-	if out.has_key('DESTINATION') and out.has_key('LOCATION'):
-		if len(out['LOCATION'])==1:
-			out['ORIGIN']=out['LOCATION'][0]
-			del out['LOCATION']
-	
 	if out.has_key('ORGANIZATION'):
 		logger.debug(out['ORGANIZATION'])
 		for org in out['ORGANIZATION']:
 			out.setdefault('LOCATION',[]).append(org)
-		logger.debug('LOCATION****')
 		logger.debug(out['LOCATION'])
 		del out['ORGANIZATION']
+
+	if out.has_key('DESTINATION') and out.has_key('LOCATION'):
+                if len(out['LOCATION'])==1:
+                        logger.debug('Should have deleted LOCATION TAG')
+                        out['ORIGIN']=out['LOCATION'][0]
+                        del out['LOCATION']
 
 	return str(out)
 

@@ -1,3 +1,4 @@
+from django.views.decorators.csrf import csrf_exempt
 from datetime import datetime,timedelta
 from django.conf import settings
 from django.shortcuts import render
@@ -25,14 +26,19 @@ def tagger(request,text):
 	tags=uniteCityTokens(tags)
 	tags=processDateTokens(tags)
 	tags=processTimeTokens(tags)
-	res=search(tags)
-	return HttpResponse(str(res))
-	#return HttpResponse(str(tags))
+	#res=search(tags)
+	#return HttpResponse(str(res))
+	logger.debug(tags)
+	return HttpResponse(str(tags))
 
-
-def search(request,fields):
+@csrf_exempt
+def search(request):
+	#logger.debug(dir(request))
+	if request.method== 'POST':
+		logger.debug(request.POST)
+		fields=dict(request.POST)
+	logger.debug(fields)
 	flights=Flights.objects.filter()
-	fields=dict(fields)
 	for key in fields:
 		logger.debug(key)
 		fl=[]
