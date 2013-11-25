@@ -24,13 +24,18 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.lang.*;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.Date;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 
 import org.apache.http.HttpResponse;
+import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.DefaultHttpClient;
 
 
@@ -77,7 +82,7 @@ public class MainActivity extends Activity implements OnClickListener, OnInitLis
     private TextToSpeech repeatTTS; 
 	private ListView wordList;
 
-	int flagVar[] = new int[3];
+	int flagVar[] = new int[4];
 	String eventRetStr="",dateRetStr="",timeRetStr="";
 	
 	SQLiteDatabase dbObj = null;
@@ -90,6 +95,7 @@ public class MainActivity extends Activity implements OnClickListener, OnInitLis
 	ArrayList <String> matches;
 	int initDialogueFlag = 0;
 	String response;
+	String dbResponse="";
 	
 	public long dateTimeVal;
 	
@@ -106,7 +112,7 @@ public class MainActivity extends Activity implements OnClickListener, OnInitLis
     public void onCreate(Bundle savedInstanceState) {
     	
     	super.onCreate(savedInstanceState);
-    	for(int i=0;i<3;i++)
+    	for(int i=0;i<4;i++)
     		flagVar[i] = 0;
     	
     	
@@ -304,6 +310,7 @@ public class MainActivity extends Activity implements OnClickListener, OnInitLis
     
     String t=""; public int count=0;
     ArrayList<String> displayList = new ArrayList<String>();
+    ArrayList<String> finalList = new ArrayList<String>();
     @Override
    
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
@@ -317,54 +324,94 @@ public class MainActivity extends Activity implements OnClickListener, OnInitLis
             text = matches.get(0).toString();
             
             ttsCheck();
-            
-            if(flagVar[0]==0 && flagVar[1]==0 && flagVar[2]==0){
-            	
             	/*send utterance to server*/
             	speakCall(text);
             	try{
             		String modText = text+" .";
             		String url = modText.replaceAll(" ", "%20");
-            		//new AsyncTaskActivity().execute("http://54.201.35.119:8000/rawParser/tag/"+url);
-            		new AsyncTaskActivity().execute("http://www.anantagarwal.in/testscript.php");
+            		//new AsyncTaskActivity().execute("http://www.anantagarwal.in/testscript.php");
+            		new AsyncTaskActivity().execute("http://54.201.35.119:8000/rawParser/tag/"+url);
             		ttsCheck();
             		Thread.sleep(3000);
             		String outText = response.toString().replaceAll("'", "\"");
-            		Toast.makeText(MainActivity.this,response, Toast.LENGTH_SHORT).show();
-            		HashMap<String,String[]> hashMapObj = jsonParser(outText);
+            		Toast.makeText(MainActivity.this,"first query result"+response, Toast.LENGTH_SHORT).show();
             		wordList.setAdapter(new ArrayAdapter<String> (this, android.R.layout.simple_list_item_1, displayList));
+            		HashMap<String,String[]> hashMapObj = jsonParser(outText);
             		
-            		
+            		//Thread.sleep(3000);
             		// test to check whether hash map is being built or not.
-            		Iterator hashIterator = globalFrame.keySet().iterator();
-            		while(hashIterator.hasNext()){
-            			
-            			String[] values = globalFrame.get(hashIterator.next());
-            			
-            			if(values[0].toString()=="-1"){
+            		/*	Iterator hashIterator = globalFrame.entrySet().iterator();
+            			HashMap.Entry entry = (HashMap.Entry)hashIterator.next();
+            			String[] values = (String[])entry.getValue();
+            			String key = (String)entry.getKey();
+            			if(values[0].toString()=="-1" && key!="TIME" && key=="DATE" && flagVar[2]==0){
             				
             				Toast.makeText(MainActivity.this,"global frame iterator", Toast.LENGTH_SHORT).show();
-            				speakCall("You have not specified the "+missingKey);
+            				speakCall("Ok, got it!!"+"On what date do you want to fly on!!");
             				ttsCheck();
             				listenToSpeech();
+            				entry = (HashMap.Entry)hashIterator.next();
             			}
-            		}
-            		
+            			else if(values[0].toString()=="-1" && key!="TIME" && key=="ORIGIN" && flagVar[0]==0){
+            				
+            				Toast.makeText(MainActivity.this,"global frame iterator", Toast.LENGTH_SHORT).show();
+            				speakCall("Ok, got it!!"+"Do you want to fly from Raleigh or some other city!!");
+            				ttsCheck();
+            				listenToSpeech();
+            				//hashIterator = globalFrame.entrySet().iterator();
+            				entry = (HashMap.Entry)hashIterator.next();
+            			}
+            			else if(values[0].toString()=="-1" && key!="TIME" && key=="DESTINATION" && flagVar[1]==0){
+            				
+            				Toast.makeText(MainActivity.this,"global frame iterator", Toast.LENGTH_SHORT).show();
+            				speakCall("Ok, got it!!"+"Where do you want to fly to?");
+            				ttsCheck();
+            				listenToSpeech();
+            				//hashIterator = globalFrame.entrySet().iterator();
+            				entry = (HashMap.Entry)hashIterator.next();
+            			}
+            		*/
             		
             		//speakCall(response.toString());
                 	//ttsCheck();
             	}catch(Exception e){
             		Toast.makeText(MainActivity.this,e.toString(), Toast.LENGTH_SHORT).show();
-            		speakCall(e.toString());
-            		Toast.makeText(MainActivity.this,e.toString(), Toast.LENGTH_SHORT).show();
-            		ttsCheck();
             	}
             	
-            }
             
-            if(count==4){
-            	speakCall("Thank You for your inputs. We are quering your results...");
-            	Toast.makeText(MainActivity.this,"database block", Toast.LENGTH_SHORT).show();
+            if(count>=3){
+            	
+
+            	
+            	new HttpAsyncTask().execute("http://54.201.35.119:8000/rawParser/search/");
+            	
+            	try {
+					Thread.sleep(1000);
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+            	
+            	Log.v("custom", tempStr);
+            	
+            	dbParser(tempStr);
+            	
+            	//Toast.makeText(getBaseContext(), dbResponse.toString(), Toast.LENGTH_LONG).show();
+            	wordList.setAdapter(new ArrayAdapter<String> (this, android.R.layout.simple_list_item_1, finalList));
+            	
+            	//HashMap<String,String[]> hashMapObj = jsonParser(tempStr);
+            	
+            	/*speakCall("Thank You for your inputs. We are quering your results...");
+            	ttsCheck();
+            	t = mainObj.toString();
+            	new AsyncTaskActivity().execute("http://54.201.35.119:8000/rawParser/search/"+t);
+            	try {
+					Thread.sleep(3000);
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+            	Toast.makeText(MainActivity.this,"db query" + response, Toast.LENGTH_SHORT).show();*/
             }
             
             speakCall("");
@@ -424,14 +471,67 @@ public class MainActivity extends Activity implements OnClickListener, OnInitLis
 		} while (speakingEnd);
 		
     }
-   
-    
-    public HashMap<String, String[]>jsonParser(String jsonString){
+    public void dbParser(String jsonString){
     	
+    	try {
+    		JSONArray flightData = new JSONArray(jsonString);
+    		Log.v("custom","created JSONArray");
+    		for(int i=0; i<flightData.length();i++){
+				JSONObject flightObj = flightData.getJSONObject(i);
+				JSONObject flightFields = flightObj.getJSONObject("fields");
+				Iterator keys = flightFields.keys();
+				FlightDetails flightDetailObj =  new FlightDetails();
+				
+				while(keys.hasNext()){
+					
+					Method method = null;
+					String currentKey = (String)keys.next();
+					String fieldVal = flightFields.get(currentKey).toString();
+					Log.v("custoom",currentKey);
+					Log.v("custom",fieldVal);
+					String methodName = "set"+currentKey;
+					
+					try{
+						method = flightDetailObj.getClass().getMethod(methodName, String.class);
+					}catch(Exception e){
+						Log.v("cusotm",methodName);
+						Log.v("cusotm","method not defined");
+					}
+					try {
+						method.invoke(flightDetailObj,fieldVal);
+						Log.v("cusotm","method invokded");
+					} catch (IllegalArgumentException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					} catch (IllegalAccessException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					} catch (InvocationTargetException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+					
+				}
+				
+				finalList.add(flightDetailObj.toString());
+				Log.v("custom",flightDetailObj.toString());
+    		}
+		} catch (JSONException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+    	
+    	
+    	
+    }
+
+    JSONObject mainObj; 
+    public HashMap<String, String[]>jsonParser(String jsonString){
+    	t = jsonString;
     	HashMap<String,String[]> hashMapObj = new HashMap<String,String[]>();
     	
     	try {
-			JSONObject mainObj = new JSONObject(jsonString);
+			mainObj = new JSONObject(jsonString);
 			Iterator keys = mainObj.keys();
 			while(keys.hasNext()){
 				ArrayList<String> values=new ArrayList<String>();
@@ -461,7 +561,15 @@ public class MainActivity extends Activity implements OnClickListener, OnInitLis
 						String disp = currentKey+" : ";
 						String disp1="";
 						for(int i=0;i<vals.length;i++)
-							disp1.concat(vals[i]+",");
+							disp1 = disp1 + vals[i] + ",";
+						
+						if(currentKey=="DESTINATION"){
+							flagVar[0]=1;
+						}
+						if(currentKey=="ORIGIN"){
+							flagVar[1]=1;
+						}
+						
 //						if(disp1.endsWith(","))
 //						{
 //						  disp1 = disp1.substring(0,disp1.length() - 1);
@@ -472,6 +580,11 @@ public class MainActivity extends Activity implements OnClickListener, OnInitLis
 						//Toast.makeText(MainActivity.this,disp, Toast.LENGTH_SHORT).show();
 						displayList.add(disp);
 					}else{
+						if(currentKey=="TIME"){
+							flagVar[2]=1;
+						}else if(currentKey=="DATE"){
+							flagVar[3]=1;
+						}
 						globalFrame.put(currentKey, vals);
 						displayList.add(currentKey+" : "+vals[0]);
 						//Toast.makeText(MainActivity.this,currentKey +":"+ vals[0], Toast.LENGTH_SHORT).show();
@@ -485,7 +598,83 @@ public class MainActivity extends Activity implements OnClickListener, OnInitLis
 			e.printStackTrace();
 		}
     	
+    	wordList.setAdapter(new ArrayAdapter<String> (this, android.R.layout.simple_list_item_1, displayList));
     	return hashMapObj;
+    }
+    
+    /* POST */
+    static StringEntity tempEnt;
+    static String tempStr;
+    static String jsonStr;
+    public static String POST(String url,JSONObject obj){
+    	InputStream inputStream = null;
+    	String result = "";
+    	try{
+    		
+    		HttpClient httpClient = new DefaultHttpClient();
+    		HttpPost httpPost = new HttpPost(url);
+    		
+    		String json = "";
+    		
+    		json = obj.toString();
+    		jsonStr = json;
+    		StringEntity se = new StringEntity(json);
+    		httpPost.setEntity(se);
+    		tempEnt=se;
+    		//Toast.makeText(MainActivity.this,"Yo "+se, Toast.LENGTH_SHORT).show();
+    		
+    		httpPost.setHeader("Accept", "application/json");
+    		httpPost.setHeader("Content-type","application/json");
+    		
+    		HttpResponse httpResponse = httpClient.execute(httpPost);
+    		
+    		inputStream = httpResponse.getEntity().getContent();
+    		
+    		if(inputStream!=null){
+    			result = convertInputStreamToString(inputStream);
+    			tempStr = result;
+    		}
+    		else
+    			result = "Did not work!";
+    	}catch(Exception e){
+    		
+    	}
+    	
+    	return result;
+    }
+    
+    private static String convertInputStreamToString(InputStream inputStream) throws IOException{
+        BufferedReader bufferedReader = new BufferedReader( new InputStreamReader(inputStream));
+        String line = "";
+        String result = "";
+        while((line = bufferedReader.readLine()) != null)
+            result += line;
+ 
+        inputStream.close();
+        return result;
+ 
+    } 
+    
+    /* json http connection */
+    
+    
+    private class HttpAsyncTask extends AsyncTask<String, Void, String> {
+        @Override
+        protected String doInBackground(String... urls) {
+        	//Toast.makeText(getBaseContext(), tempStr, Toast.LENGTH_LONG).show();
+            
+        	dbResponse = POST(urls[0],mainObj);
+        	Log.v("custom", jsonStr);
+            
+        	return dbResponse;
+        }
+        // onPostExecute displays the results of the AsyncTask.
+        @Override
+        protected void onPostExecute(String result) {
+        	
+            Toast.makeText(getBaseContext(), "Data Sent!", Toast.LENGTH_LONG).show();
+            
+       }
     }
     
     
@@ -603,6 +792,72 @@ public class MainActivity extends Activity implements OnClickListener, OnInitLis
 		
 	}
     
+	
+	public class FlightDetails {
+		public String getcost() {
+			return cost;
+		}
+		public void setcost(String cost) {
+			this.cost = cost;
+		}
+		public String getorigin() {
+			return origin;
+		}
+		public void setorigin(String origin) {
+			this.origin = origin;
+		}
+		public String getdestination() {
+			return destination;
+		}
+		public void setdestination(String destination) {
+			this.destination = destination;
+		}
+		public String getstarttime() {
+			return startTime;
+		}
+		public void setstarttime(String startTime) {
+			this.startTime = startTime;
+		}
+		public String getendtime() {
+			return endTime;
+		}
+		public void setendtime(String endTime) {
+			this.endTime = endTime;
+		}
+		public String getdepartdate() {
+			return departDate;
+		}
+		public void setdepartdate(String departDate) {
+			this.departDate = departDate;
+		}
+		public String getairline() {
+			return airline;
+		}
+		public void setairline(String airline) {
+			this.airline = airline;
+		}
+		public String getstops() {
+			return stops;
+		}
+		public void setstops(String stops) {
+			this.stops = stops;
+		}
+		private String cost;
+		private String origin;
+		private String destination;
+		private String startTime;
+		private String endTime;
+		private String departDate;
+		private String airline;
+		private String stops;
+		
+		public String toString(){
+			
+			String retDetail = "Cost : "+cost+"$\nOrigin : "+origin+"\nDestination : "+destination+"\nDeparture Date : "+ departDate+"\nDeparture Time : "+startTime+"\nArrival Time : "+endTime+"\nAirline : "+airline+"\nStops : "+stops;
+			
+			return retDetail;
+		}
+	}
 	
 }
 
