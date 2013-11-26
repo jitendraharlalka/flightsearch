@@ -31,6 +31,7 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 
+import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
@@ -156,6 +157,11 @@ public class MainActivity extends Activity implements OnClickListener, OnInitLis
 		}
 		*/
 		
+    	ArrayList<String> initList = new ArrayList<String>();
+    	initList.add("Hello, Welcome to Flight Search!!");
+    	initList.add("Please press the speak button to query flights");
+    	
+    	
     	//call superclass
         super.onCreate(savedInstanceState);
         //set content view
@@ -174,7 +180,7 @@ public class MainActivity extends Activity implements OnClickListener, OnInitLis
         //database entries
 
         // database creation
-        
+        wordList.setAdapter(new ArrayAdapter<String> (this, android.R.layout.simple_list_item_1, initList));
        
         //find out whether speech recognition is supported
         PackageManager packManager = getPackageManager();
@@ -328,7 +334,7 @@ public class MainActivity extends Activity implements OnClickListener, OnInitLis
             ttsCheck();
             	/*send utterance to server*/
             	//speakCall("Processing...");
-            	speakCall(text);
+            	speakCall("Ok,Let me check in with the server...");
             	//ttsCheck();
             	try{
             		String modText = text+" .";
@@ -336,7 +342,8 @@ public class MainActivity extends Activity implements OnClickListener, OnInitLis
             		//new AsyncTaskActivity().execute("http://www.anantagarwal.in/testscript.php");
             		new AsyncTaskActivity().execute("http://54.201.35.119:8000/rawParser/tag/"+url);
             		ttsCheck();
-            		Thread.sleep(3000);
+            		Thread.sleep(4000);
+            		//Log.v("tag",response.toString());
             		String outText = response.toString().replaceAll("'", "\"");
             		//Toast.makeText(MainActivity.this,"first query result"+response, Toast.LENGTH_SHORT).show();
             		wordList.setAdapter(new ArrayAdapter<String> (this, android.R.layout.simple_list_item_1, displayList));
@@ -586,45 +593,41 @@ public class MainActivity extends Activity implements OnClickListener, OnInitLis
 				String[] vals=values.toArray(new String[values.size()]);
 				//speakCall(vals.toString());
 				Arrays.sort(vals);
-//				for(int i=0;i<vals.length;i++)
-//					Toast.makeText(MainActivity.this,currentKey+" "+" "+ vals[i]+" sort", Toast.LENGTH_SHORT).show();
-//				
-				hashMapObj.put(currentKey, vals);
+				
+				Log.v("Check Values",Integer.toString(vals.length));
 				String[] mapValue = globalFrame.get(currentKey);
-				//Arrays.sort(mapValue);
-				Log.v("print",currentKey.toString());
-				Log.v("print",vals[0]);
-				Log.v("print",globalFrame.get("ORIGIN")[0]);
-				if(currentKey=="LOCATION" || (currentKey=="DESTINATION" && globalFrame.get("ORIGIN")[0].toString()=="-1")){
-					Log.v("str","herhe");
-					if(globalFrame.get("DESTINATION")[0]=="-1"){
-						globalFrame.get("DESTINATION")[0] = vals[0];
-					}else if(globalFrame.get("ORIGIN")[0].toString()=="-1"){
-						Log.v("temp","reached");
-						globalFrame.get("ORIGIN")[0] = vals[0];
+				hashMapObj.put(currentKey, vals);
+
+				if(currentKey.equals("LOCATION")){
+					Log.v("Adding To frame", currentKey);
+					if(globalFrame.get("DESTINATION")[0].equals("-1")){
+						Log.v("Location To","Destination");
+						globalFrame.put("DESTINATION", vals);
+					}else if(globalFrame.get("ORIGIN")[0].equals("-1")){
+						Log.v("Location To","Origin");
+						globalFrame.put("ORIGIN", vals);
 					}
 				}
-				if(mapValue[0].toString() == "-1" && currentKey!="LOCATION"){
+				
+			/*|| (currentKey.equals("DESTINATION") && globalFrame.get("ORIGIN")[0].toString()=="-1" && globalFrame.get("DESTINATION")[0].toString()!="-1")*/
+				/*if(currentKey.equals("LOCATION") 
+					Log.v("str","herhe");
+					if(globalFrame.get("DESTINATION")[0].equals("-1")){
+						globalFrame.get("DESTINATION")[0] = vals[0];
+					}else if(globalFrame.get("ORIGIN")[0].equals("-1")){
+						globalFrame.get("ORIGIN")[0] = vals[0];
+					}
+				}*/
+				
+				if(mapValue[0].equals("-1")){
 					//Toast.makeText(MainActivity.this,"adding value "+count, Toast.LENGTH_SHORT).show();
-					if(currentKey.toString() == "DESTINATION" || currentKey.toString() == "ORIGIN" || currentKey.toString() == "LOCATION"){
+					if(currentKey.equals("DESTINATION") || currentKey.equals("ORIGIN") || currentKey.equals("DATE") || currentKey.equals("TIME")){
 						globalFrame.put(currentKey, vals);
 						String disp = currentKey+" : ";
 						String disp1="";
-						for(int i=0;i<vals.length;i++)
+						for(int i=0;i<vals.length;i++){
 							disp1 = disp1 + vals[i] + ",";
-						
-						if(currentKey=="DESTINATION"){
-							flagVar[0]=1;
-						}
-						if(currentKey=="ORIGIN"){
-							flagVar[1]=1;
-						}
-						if(currentKey=="LOCATION"){
-							if(globalFrame.get("DESTINATION")[0]=="-1"){
-								globalFrame.get("DESTINATION")[0] = vals[0];
-							}else if(globalFrame.get("ORIGIN")[0]=="-1"){
-								globalFrame.get("ORIGIN")[0] = vals[0];
-							}
+							Log.v("Show disp", disp1);
 						}
 						
 //						if(disp1.endsWith(","))
@@ -632,20 +635,17 @@ public class MainActivity extends Activity implements OnClickListener, OnInitLis
 //						  disp1 = disp1.substring(0,disp1.length() - 1);
 //						}
 
-						disp.concat(disp1);
+						disp=disp+disp1;
 						
+						Log.v("New Rec",disp);
 						//Toast.makeText(MainActivity.this,disp, Toast.LENGTH_SHORT).show();
 						displayList.add(disp);
-					}else{
-						if(currentKey=="TIME"){
-							flagVar[2]=1;
-						}else if(currentKey=="DATE"){
-							flagVar[3]=1;
-						}
+					}/*else if(currentKey=="DATE" || currentKey=="TIME"){
+						
 						globalFrame.put(currentKey, vals);
 						displayList.add(currentKey+" : "+vals[0]);
 						//Toast.makeText(MainActivity.this,currentKey +":"+ vals[0], Toast.LENGTH_SHORT).show();
-					}
+					}*/
 					
 					count++;
 				}
@@ -663,7 +663,7 @@ public class MainActivity extends Activity implements OnClickListener, OnInitLis
     static StringEntity tempEnt;
     static String tempStr;
     static String jsonStr;
-    public static String POST(String url,JSONObject obj){
+    public String POST(String url,JSONObject obj){
     	InputStream inputStream = null;
     	String result = "";
     	try{
@@ -672,13 +672,19 @@ public class MainActivity extends Activity implements OnClickListener, OnInitLis
     		HttpPost httpPost = new HttpPost(url);
     		
     		String json = "";
-    		
-    		json = obj.toString();
+    		//json = obj.toString();
+    		Log.v("reachUpdate","reached ehre at httpcon");
+    		json = constructJSON(obj);
     		jsonStr = json;
     		StringEntity se = new StringEntity(json);
+
+    		Log.v("htttp",json);
+    		//HttpEntity x=(HttpEntity)obj;
+    		//Log.v("http", x.toString());
     		httpPost.setEntity(se);
     		tempEnt=se;
-    		//Log.v("htttp",obj.keys().next());
+    		Log.v("htttp",json);
+    		
     		
     		//Toast.makeText(MainActivity.this,"Yo "+se, Toast.LENGTH_SHORT).show();
     		
@@ -687,7 +693,7 @@ public class MainActivity extends Activity implements OnClickListener, OnInitLis
     		
     	
     		
-    		HttpResponse httpResponse = httpClient.execute((HttpUriRequest)httpPost);
+    		HttpResponse httpResponse = httpClient.execute(httpPost);
     		
     		inputStream = httpResponse.getEntity().getContent();
     		
@@ -706,6 +712,48 @@ public class MainActivity extends Activity implements OnClickListener, OnInitLis
     	return result;
     }
     
+    public String StringArrayToString(String[] values){
+    	StringBuilder builder=new StringBuilder();
+    	builder.append("[");
+    	for(String s : values){
+    		builder.append("\""+s+"\""+",");
+    	}
+    	String out=builder.toString();
+    	out=out.substring(0, out.length()-1);
+    	out=out+"]";
+    	return out;
+    }
+    
+    public String constructJSON(JSONObject obj){
+    	
+    	Iterator keys = obj.keys();
+		JSONObject tempObj = new JSONObject();
+		
+		Log.v("inside json","something here");
+    	while(keys.hasNext()){
+    		
+    		String currentKey = (String)keys.next();
+    		Log.v("inside json",currentKey);
+    		
+    		String[] vals = globalFrame.get(currentKey);
+    		if(vals.length>0 && vals[0]=="-1"){
+    			continue;
+    		}
+			//String value = StringArrayToString(globalFrame.get(currentKey));
+			JSONArray json = new JSONArray(Arrays.asList(vals));
+			Log.v("inside json",json.toString());
+			try {
+				Log.v("inside json","in json array");
+				tempObj.put(currentKey, json);
+			} catch (JSONException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			
+		}	
+			return tempObj.toString();
+    	
+    }
     private static String convertInputStreamToString(InputStream inputStream) throws IOException{
         BufferedReader bufferedReader = new BufferedReader( new InputStreamReader(inputStream));
         String line = "";
