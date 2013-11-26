@@ -384,20 +384,21 @@ public class MainActivity extends Activity implements OnClickListener, OnInitLis
             			}
             		*/
             		
-            		//Log.v("try",globalFrame.get("DESTINATION")[0]);
-            		//Log.v("try",globalFrame.get("ORIGIN")[0]);
-            		//Log.v("try",globalFrame.get("DATE")[0]);
+            		Log.v("gtry",globalFrame.get("DESTINATION")[0]);
+            		Log.v("gtry",globalFrame.get("ORIGIN")[0]);
+            		Log.v("gtry",globalFrame.get("DATE")[0]);
+            		Log.v("gcount",Integer.toString(count));
             		
             		if(globalFrame.get("DESTINATION")[0]=="-1"){
             			speakCall("Ok, Where do you want to fly to?");
             			ttsCheck();
             			listenToSpeech();
-            		}else if(globalFrame.get("DESTINATION")[0]!="-1" && globalFrame.get("ORIGIN")[0]=="-1"){
+            		}else if(globalFrame.get("DESTINATION")[0]!="-1" && globalFrame.get("ORIGIN")[0].equals("-1")){
             			speakCall("Ok, Where do you want to fly from?");
             			ttsCheck();
             			listenToSpeech();
             		}
-            		else if(globalFrame.get("DESTINATION")[0]!="-1" && globalFrame.get("ORIGIN")[0]!="-1" && globalFrame.get("DATE")[0]=="-1"){
+            		else if(globalFrame.get("DESTINATION")[0]!="-1" && globalFrame.get("ORIGIN")[0]!="-1" && globalFrame.get("DATE")[0].equals("-1")){
             			speakCall("Ok, When do you want to fly??");
             			ttsCheck();
             			listenToSpeech();
@@ -412,7 +413,7 @@ public class MainActivity extends Activity implements OnClickListener, OnInitLis
             	
             
             if(count>=3){
-            	
+            	Log.v("gtry","reached in db");
             	speakCall("Processing...");
             	ttsCheck();
             	
@@ -618,8 +619,11 @@ public class MainActivity extends Activity implements OnClickListener, OnInitLis
 						globalFrame.get("ORIGIN")[0] = vals[0];
 					}
 				}*/
-				
+				Log.v("Count",Integer.toString(count));
+				if(globalFrame.containsKey(currentKey)){
 				if(mapValue[0].equals("-1")){
+					Log.v("gtry current",currentKey);
+					Log.v("gtry date",globalFrame.get("DATE")[0]);
 					//Toast.makeText(MainActivity.this,"adding value "+count, Toast.LENGTH_SHORT).show();
 					if(currentKey.equals("DESTINATION") || currentKey.equals("ORIGIN") || currentKey.equals("DATE") || currentKey.equals("TIME")){
 						globalFrame.put(currentKey, vals);
@@ -647,11 +651,14 @@ public class MainActivity extends Activity implements OnClickListener, OnInitLis
 						//Toast.makeText(MainActivity.this,currentKey +":"+ vals[0], Toast.LENGTH_SHORT).show();
 					}*/
 					
-					count++;
+					
 				}
+				}
+				count++;
 			}
 		} catch (JSONException e) {
 			// TODO Auto-generated catch block
+			Log.v("try","readched ehre doing something");
 			e.printStackTrace();
 		}
     	
