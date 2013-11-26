@@ -35,6 +35,7 @@ import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.DefaultHttpClient;
 
@@ -125,6 +126,7 @@ public class MainActivity extends Activity implements OnClickListener, OnInitLis
     	globalFrame.put("ORIGIN", new String[] {"-1"});
     	globalFrame.put("DATE", new String[] {"-1"});
     	globalFrame.put("TIME", new String[] {"-1"});
+    	
     	
     	Iterator globalHashIterator = globalFrame.keySet().iterator();
 		while(globalHashIterator.hasNext()){
@@ -325,7 +327,9 @@ public class MainActivity extends Activity implements OnClickListener, OnInitLis
             
             ttsCheck();
             	/*send utterance to server*/
+            	//speakCall("Processing...");
             	speakCall(text);
+            	//ttsCheck();
             	try{
             		String modText = text+" .";
             		String url = modText.replaceAll(" ", "%20");
@@ -334,8 +338,9 @@ public class MainActivity extends Activity implements OnClickListener, OnInitLis
             		ttsCheck();
             		Thread.sleep(3000);
             		String outText = response.toString().replaceAll("'", "\"");
-            		Toast.makeText(MainActivity.this,"first query result"+response, Toast.LENGTH_SHORT).show();
+            		//Toast.makeText(MainActivity.this,"first query result"+response, Toast.LENGTH_SHORT).show();
             		wordList.setAdapter(new ArrayAdapter<String> (this, android.R.layout.simple_list_item_1, displayList));
+            		
             		HashMap<String,String[]> hashMapObj = jsonParser(outText);
             		
             		//Thread.sleep(3000);
@@ -372,6 +377,26 @@ public class MainActivity extends Activity implements OnClickListener, OnInitLis
             			}
             		*/
             		
+            		//Log.v("try",globalFrame.get("DESTINATION")[0]);
+            		//Log.v("try",globalFrame.get("ORIGIN")[0]);
+            		//Log.v("try",globalFrame.get("DATE")[0]);
+            		
+            		if(globalFrame.get("DESTINATION")[0]=="-1"){
+            			speakCall("Ok, Where do you want to fly to?");
+            			ttsCheck();
+            			listenToSpeech();
+            		}else if(globalFrame.get("DESTINATION")[0]!="-1" && globalFrame.get("ORIGIN")[0]=="-1"){
+            			speakCall("Ok, Where do you want to fly from?");
+            			ttsCheck();
+            			listenToSpeech();
+            		}
+            		else if(globalFrame.get("DESTINATION")[0]!="-1" && globalFrame.get("ORIGIN")[0]!="-1" && globalFrame.get("DATE")[0]=="-1"){
+            			speakCall("Ok, When do you want to fly??");
+            			ttsCheck();
+            			listenToSpeech();
+            		}
+            		
+            		
             		//speakCall(response.toString());
                 	//ttsCheck();
             	}catch(Exception e){
@@ -381,7 +406,8 @@ public class MainActivity extends Activity implements OnClickListener, OnInitLis
             
             if(count>=3){
             	
-
+            	speakCall("Processing...");
+            	ttsCheck();
             	
             	new HttpAsyncTask().execute("http://54.201.35.119:8000/rawParser/search/");
             	
@@ -392,9 +418,21 @@ public class MainActivity extends Activity implements OnClickListener, OnInitLis
 					e.printStackTrace();
 				}
             	
-            	Log.v("custom", tempStr);
+            	
+            	
+            	//Log.v("custom", tempStr);
             	
             	dbParser(tempStr);
+            	
+            	int flightCount = finalList.size();
+            	
+            	if(flightCount!=0){
+            		speakCall("Showing "+flightCount+" matching flights.");
+            		ttsCheck();
+            	}else{
+            		speakCall("Sorry, we can't find any matching flights");
+            		ttsCheck();
+            	}
             	
             	//Toast.makeText(getBaseContext(), dbResponse.toString(), Toast.LENGTH_LONG).show();
             	wordList.setAdapter(new ArrayAdapter<String> (this, android.R.layout.simple_list_item_1, finalList));
@@ -475,7 +513,8 @@ public class MainActivity extends Activity implements OnClickListener, OnInitLis
     	
     	try {
     		JSONArray flightData = new JSONArray(jsonString);
-    		Log.v("custom","created JSONArray");
+    		//Log.v("custom","created JSONArray");
+    		
     		for(int i=0; i<flightData.length();i++){
 				JSONObject flightObj = flightData.getJSONObject(i);
 				JSONObject flightFields = flightObj.getJSONObject("fields");
@@ -487,19 +526,19 @@ public class MainActivity extends Activity implements OnClickListener, OnInitLis
 					Method method = null;
 					String currentKey = (String)keys.next();
 					String fieldVal = flightFields.get(currentKey).toString();
-					Log.v("custoom",currentKey);
-					Log.v("custom",fieldVal);
+					//Log.v("custoom",currentKey);
+					//Log.v("custom",fieldVal);
 					String methodName = "set"+currentKey;
 					
 					try{
 						method = flightDetailObj.getClass().getMethod(methodName, String.class);
 					}catch(Exception e){
-						Log.v("cusotm",methodName);
-						Log.v("cusotm","method not defined");
+						//Log.v("cusotm",methodName);
+						//Log.v("cusotm","method not defined");
 					}
 					try {
 						method.invoke(flightDetailObj,fieldVal);
-						Log.v("cusotm","method invokded");
+						//Log.v("cusotm","method invokded");
 					} catch (IllegalArgumentException e) {
 						// TODO Auto-generated catch block
 						e.printStackTrace();
@@ -514,7 +553,7 @@ public class MainActivity extends Activity implements OnClickListener, OnInitLis
 				}
 				
 				finalList.add(flightDetailObj.toString());
-				Log.v("custom",flightDetailObj.toString());
+				//Log.v("custom",flightDetailObj.toString());
     		}
 		} catch (JSONException e) {
 			// TODO Auto-generated catch block
@@ -527,7 +566,7 @@ public class MainActivity extends Activity implements OnClickListener, OnInitLis
 
     JSONObject mainObj; 
     public HashMap<String, String[]>jsonParser(String jsonString){
-    	t = jsonString;
+    	
     	HashMap<String,String[]> hashMapObj = new HashMap<String,String[]>();
     	
     	try {
@@ -553,10 +592,21 @@ public class MainActivity extends Activity implements OnClickListener, OnInitLis
 				hashMapObj.put(currentKey, vals);
 				String[] mapValue = globalFrame.get(currentKey);
 				//Arrays.sort(mapValue);
-				
-				if(mapValue[0].toString() == "-1"){
+				Log.v("print",currentKey.toString());
+				Log.v("print",vals[0]);
+				Log.v("print",globalFrame.get("ORIGIN")[0]);
+				if(currentKey=="LOCATION" || (currentKey=="DESTINATION" && globalFrame.get("ORIGIN")[0].toString()=="-1")){
+					Log.v("str","herhe");
+					if(globalFrame.get("DESTINATION")[0]=="-1"){
+						globalFrame.get("DESTINATION")[0] = vals[0];
+					}else if(globalFrame.get("ORIGIN")[0].toString()=="-1"){
+						Log.v("temp","reached");
+						globalFrame.get("ORIGIN")[0] = vals[0];
+					}
+				}
+				if(mapValue[0].toString() == "-1" && currentKey!="LOCATION"){
 					//Toast.makeText(MainActivity.this,"adding value "+count, Toast.LENGTH_SHORT).show();
-					if(currentKey.toString() == "DESTINATION" || currentKey.toString() == "ORIGIN"){
+					if(currentKey.toString() == "DESTINATION" || currentKey.toString() == "ORIGIN" || currentKey.toString() == "LOCATION"){
 						globalFrame.put(currentKey, vals);
 						String disp = currentKey+" : ";
 						String disp1="";
@@ -568,6 +618,13 @@ public class MainActivity extends Activity implements OnClickListener, OnInitLis
 						}
 						if(currentKey=="ORIGIN"){
 							flagVar[1]=1;
+						}
+						if(currentKey=="LOCATION"){
+							if(globalFrame.get("DESTINATION")[0]=="-1"){
+								globalFrame.get("DESTINATION")[0] = vals[0];
+							}else if(globalFrame.get("ORIGIN")[0]=="-1"){
+								globalFrame.get("ORIGIN")[0] = vals[0];
+							}
 						}
 						
 //						if(disp1.endsWith(","))
@@ -621,18 +678,24 @@ public class MainActivity extends Activity implements OnClickListener, OnInitLis
     		StringEntity se = new StringEntity(json);
     		httpPost.setEntity(se);
     		tempEnt=se;
+    		//Log.v("htttp",obj.keys().next());
+    		
     		//Toast.makeText(MainActivity.this,"Yo "+se, Toast.LENGTH_SHORT).show();
     		
     		httpPost.setHeader("Accept", "application/json");
     		httpPost.setHeader("Content-type","application/json");
     		
-    		HttpResponse httpResponse = httpClient.execute(httpPost);
+    	
+    		
+    		HttpResponse httpResponse = httpClient.execute((HttpUriRequest)httpPost);
     		
     		inputStream = httpResponse.getEntity().getContent();
+    		
     		
     		if(inputStream!=null){
     			result = convertInputStreamToString(inputStream);
     			tempStr = result;
+    			//Log.v("htttp1233",tempStr);
     		}
     		else
     			result = "Did not work!";
@@ -662,9 +725,9 @@ public class MainActivity extends Activity implements OnClickListener, OnInitLis
         @Override
         protected String doInBackground(String... urls) {
         	//Toast.makeText(getBaseContext(), tempStr, Toast.LENGTH_LONG).show();
-            
-        	dbResponse = POST(urls[0],mainObj);
-        	Log.v("custom", jsonStr);
+            JSONObject newObj = new JSONObject(globalFrame);
+        	dbResponse = POST(urls[0],newObj);
+        	//Log.v("custom", jsonStr);
             
         	return dbResponse;
         }
@@ -672,7 +735,7 @@ public class MainActivity extends Activity implements OnClickListener, OnInitLis
         @Override
         protected void onPostExecute(String result) {
         	
-            Toast.makeText(getBaseContext(), "Data Sent!", Toast.LENGTH_LONG).show();
+           // Toast.makeText(getBaseContext(), "Data Sent!", Toast.LENGTH_LONG).show();
             
        }
     }
@@ -853,7 +916,7 @@ public class MainActivity extends Activity implements OnClickListener, OnInitLis
 		
 		public String toString(){
 			
-			String retDetail = "Cost : "+cost+"$\nOrigin : "+origin+"\nDestination : "+destination+"\nDeparture Date : "+ departDate+"\nDeparture Time : "+startTime+"\nArrival Time : "+endTime+"\nAirline : "+airline+"\nStops : "+stops;
+			String retDetail = "Cost : $"+cost+"\nOrigin : "+origin+"\nDestination : "+destination+"\nDeparture Date : "+ departDate+"\nDeparture Time : "+startTime+"\nArrival Time : "+endTime+"\nAirline : "+airline+"\nStops : "+stops;
 			
 			return retDetail;
 		}
