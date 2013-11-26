@@ -34,9 +34,13 @@ def tagger(request,text):
 @csrf_exempt
 def search(request):
 	#logger.debug(dir(request))
+	logger.debug(request)
+	logger.debug('BODY')
+	logger.debug(request.body)
+	logger.debug('BODY TERMINATED')
 	if request.method== 'POST':
 		logger.debug(request.POST)
-		fields=dict(request.POST)
+		fields=ast.literal_eval(request.body)	
 	logger.debug(fields)
 	flights=Flights.objects.filter()
 	for key in fields:
@@ -77,6 +81,7 @@ def search(request):
 		logger.debug('Total returned flights = ' + str(len(flights)))
 	flights=sorted(flights,key=lambda x:x.cost)
 	json_result=serializers.serialize('json',flights)
+	logger.debug('Returning flights')
 	return HttpResponse(str(json_result))
 
 def origin(request, incity):
